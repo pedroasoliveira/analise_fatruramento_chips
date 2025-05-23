@@ -76,6 +76,7 @@ def gerar_pdf_resumo(merged_df, logo_path):
     return buffer
 
 st.title("Analisador de Faturamento de Chips")
+
 fornecedor_file = st.file_uploader("Base do Fornecedor (.xlsx)", type="xlsx")
 interna_file = st.file_uploader("Base Interna (.xlsx)", type="xlsx")
 aquisicao_file = st.file_uploader("Lista de Aquisição (.xlsx)", type="xlsx")
@@ -91,9 +92,15 @@ if st.button("Processar"):
         lista_aquisicao_df = pd.read_excel(aquisicao_file)
         chips_teste_df = pd.read_excel(teste_file, sheet_name='CHIP TESTES')
         merged_df = processar_bases(fornecedor_df, interna_df, lista_aquisicao_df, chips_teste_df)
-        excel_buffer = BytesIO()
-        merged_df.to_excel(excel_buffer, index=False)
-        st.download_button("Baixar Relatório Detalhado (Excel)", excel_buffer.getvalue(), "relatorio_faturamento.xlsx")
-        pdf_buffer = gerar_pdf_resumo(merged_df, logo_file)
-        st.download_button("Baixar Resumo (PDF)", pdf_buffer.getvalue(), "resumo_faturamento.pdf")
-        st.success("Processamento concluído com sucesso.")
+        st.session_state['merged_df'] = merged_df
+        st.session_state['logo_file'] = logo_file
+        st.success("Processamento concluído com sucesso. Agora você pode baixar os relatórios.")
+
+if 'merged_df' in st.session_state:
+    merged_df = st.session_state['merged_df']
+    logo_file = st.session_state.get('logo_file', None)
+    excel_buffer = BytesIO()
+    merged_df.to_excel(excel_buffer, index=False)
+    st.download_button("Baixar Relatório Detalhado (Excel)", excel_buffer.getvalue(), "relatorio_faturamento.xlsx")
+    pdf_buffer = gerar_pdf_resumo(merged_df, logo_file)
+    st.download_button("Baixar Resumo (PDF)", pdf_buffer.getvalue(), "resumo_faturamento.pdf")
