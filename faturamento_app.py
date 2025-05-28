@@ -7,6 +7,8 @@ from reportlab.lib.utils import ImageReader
 from datetime import datetime
 import pytz
 
+VALOR_UNITARIO = 21.51
+
 def processar_bases(fornecedor_df, interna_df, lista_aquisicao_df, chips_teste_df):
     fornecedor_df['ICCID'] = fornecedor_df['Iccid'].astype(str).str.strip()
     interna_df.columns = interna_df.columns.str.strip()
@@ -52,6 +54,28 @@ def processar_bases(fornecedor_df, interna_df, lista_aquisicao_df, chips_teste_d
     merged_df['Apto a Faturar'] = merged_df.apply(verifica_faturamento, axis=1)
     return merged_df
 
+def desenhar_tabela(c, y, titulo, contagem, total, total_faturar):
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(50, y, titulo)
+    y -= 20
+    c.setFont("Helvetica-Bold", 10)
+    c.drawString(50, y, "STATUS")
+    c.drawString(200, y, "QUANTIDADE")
+    y -= 15
+    c.setFont("Helvetica", 10)
+    for status, quantidade in contagem.items():
+        c.drawString(50, y, str(status))
+        c.drawString(200, y, str(quantidade))
+        y -= 15
+    c.setFont("Helvetica-Bold", 10)
+    c.drawString(50, y, "TOTAL")
+    c.drawString(200, y, str(total))
+    y -= 15
+    c.drawString(50, y, "TOTAL A FATURAR")
+    c.drawString(200, y, f"R$ {total_faturar:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+    y -= 30
+    return y
+
 def gerar_pdf_resumo(merged_df, fornecedor, mes_referencia):
     buffer = BytesIO()
     c = canvas.Canvas(buffer, pagesize=A4)
@@ -60,9 +84,7 @@ def gerar_pdf_resumo(merged_df, fornecedor, mes_referencia):
 
     try:
         logo = ImageReader("logo.png")
-        logo_width = 80
-        logo_height = 40
-        c.drawImage(logo, x=50, y=height - 100, width=logo_width, height=logo_height, preserveAspectRatio=True)
+        c.drawImage(logo, x=50, y=height - 100, width=80, height=40, preserveAspectRatio=True)
     except:
         pass
 
@@ -81,36 +103,24 @@ def gerar_pdf_resumo(merged_df, fornecedor, mes_referencia):
     c.line(50, y, width - 50, y)
     y -= 20
 
-    total_fornecedor = len(merged_df)
-    total_aptos = merged_df['Apto a Faturar'].value_counts().get('SIM', 0)
-    total_excluidos = total_fornecedor - total_aptos
-    excluidos_status = merged_df[merged_df['Apto a Faturar'] == 'NÃO']['STATUS'].value_counts()
+    # Tabela 1: Base Original
+    contagem_original = merged_df['STATUS'].value_counts()
+    total_original = contagem_original.sum()
+    total_faturar_original = total_original * VALOR_UNITARIO
+    y = desenhar_tabela(c, y, "Tabela 1: Situação Original - Base Fornecedor", contagem_original, total_original, total_faturar_original)
 
-    c.setFont("Helvetica-Bold", 12)
-    c.drawString(50, y, "Resumo:")
-    y -= 20
-    c.setFont("Helvetica", 12)
-    c.drawString(70, y, f"Total de chips recebidos: {total_fornecedor}")
-    y -= 20
-    c.drawString(70, y, f"Total de chips aptos: {total_aptos}")
-    y -= 20
-    c.drawString(70, y, f"Total de chips excluídos: {total_excluidos}")
-    y -= 30
-
-    c.setFont("Helvetica-Bold", 12)
-    c.drawString(50, y, "Status dos Chips Excluídos:")
-    y -= 20
-    c.setFont("Helvetica", 12)
-    for status, count in excluidos_status.items():
-        c.drawString(70, y, f"{status}: {count}")
-        y -= 20
+    # Tabela 2: Base Revisada
+    revisado = merged_df[merged_df['Apto a Faturar'] == 'SIM']
+    contagem_revisada = revisado['STATUS'].value_counts()
+    total_revisado = contagem_revisada.sum()
+    total_faturar_revisado = total_revisado * VALOR_UNITARIO
+    y = desenhar_tabela(c, y, "Tabela 2: Situação Revisada - Após Análise", contagem_revisada, total_revisado, total_faturar_revisado)
 
     fuso_br = pytz.timezone('America/Sao_Paulo')
     agora_br = datetime.now(fuso_br)
     data_hora = agora_br.strftime('%d/%m/%Y %H:%M')
 
     c.setFont("Helvetica-Oblique", 10)
-    y -= 30
     c.drawString(50, y, f"Gerado em: {data_hora}")
 
     c.save()
