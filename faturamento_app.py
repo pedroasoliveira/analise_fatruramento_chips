@@ -1,9 +1,11 @@
+
 import streamlit as st
 import pandas as pd
 from io import BytesIO
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.utils import ImageReader
+from datetime import datetime
 
 def processar_bases(fornecedor_df, interna_df, lista_aquisicao_df, chips_teste_df):
     fornecedor_df['ICCID'] = fornecedor_df['Iccid'].astype(str).str.strip()
@@ -54,26 +56,55 @@ def gerar_pdf_resumo(merged_df, logo_path, fornecedor, mes_referencia):
     buffer = BytesIO()
     c = canvas.Canvas(buffer, pagesize=A4)
     width, height = A4
+    y = height - 50
+
     if logo_path:
         logo = ImageReader(logo_path)
-        c.drawImage(logo, 50, height - 100, width=100, preserveAspectRatio=True)
-    c.drawString(50, height - 120, f"Fornecedor: {fornecedor}")
-    c.drawString(50, height - 140, f"Mês de Referência: {mes_referencia}")
-    c.drawString(50, height - 160, "Resumo da Análise de Faturamento")
+        c.drawImage(logo, 50, y - 50, width=100, preserveAspectRatio=True)
+
+    c.setFont("Helvetica-Bold", 16)
+    c.drawString(50, y - 80, "Relatório de Análise de Faturamento de Chips")
+    c.setLineWidth(1)
+    c.line(50, y - 85, width - 50, y - 85)
+
+    c.setFont("Helvetica", 12)
+    y -= 110
+    c.drawString(50, y, f"Fornecedor: {fornecedor}")
+    y -= 20
+    c.drawString(50, y, f"Mês de Referência: {mes_referencia}")
+    y -= 30
+    c.setLineWidth(0.5)
+    c.line(50, y, width - 50, y)
+    y -= 20
 
     total_fornecedor = len(merged_df)
     total_aptos = merged_df['Apto a Faturar'].value_counts().get('SIM', 0)
     total_excluidos = total_fornecedor - total_aptos
     excluidos_status = merged_df[merged_df['Apto a Faturar'] == 'NÃO']['STATUS'].value_counts()
 
-    c.drawString(50, height - 180, f"Total de chips recebidos: {total_fornecedor}")
-    c.drawString(50, height - 200, f"Total de chips aptos: {total_aptos}")
-    c.drawString(50, height - 220, f"Total de chips excluídos: {total_excluidos}")
-    c.drawString(50, height - 240, "Status dos chips excluídos:")
-    y = height - 260
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(50, y, "Resumo:")
+    y -= 20
+    c.setFont("Helvetica", 12)
+    c.drawString(70, y, f"Total de chips recebidos: {total_fornecedor}")
+    y -= 20
+    c.drawString(70, y, f"Total de chips aptos: {total_aptos}")
+    y -= 20
+    c.drawString(70, y, f"Total de chips excluídos: {total_excluidos}")
+    y -= 30
+
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(50, y, "Status dos Chips Excluídos:")
+    y -= 20
+    c.setFont("Helvetica", 12)
     for status, count in excluidos_status.items():
         c.drawString(70, y, f"{status}: {count}")
         y -= 20
+
+    c.setFont("Helvetica-Oblique", 10)
+    y -= 30
+    c.drawString(50, y, f"Gerado em: {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+
     c.save()
     buffer.seek(0)
     return buffer
