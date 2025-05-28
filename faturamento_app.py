@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 from io import BytesIO
@@ -6,6 +5,7 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.utils import ImageReader
 from datetime import datetime
+import pytz
 
 def processar_bases(fornecedor_df, interna_df, lista_aquisicao_df, chips_teste_df):
     fornecedor_df['ICCID'] = fornecedor_df['Iccid'].astype(str).str.strip()
@@ -60,17 +60,19 @@ def gerar_pdf_resumo(merged_df, fornecedor, mes_referencia):
 
     try:
         logo = ImageReader("logo.png")
-        c.drawImage(logo, 50, y - 50, width=100, preserveAspectRatio=True)
+        logo_width = 80
+        logo_height = 40
+        c.drawImage(logo, x=50, y=height - 100, width=logo_width, height=logo_height, preserveAspectRatio=True)
     except:
-        pass  # se a logo não for encontrada, continua sem erro
+        pass
 
     c.setFont("Helvetica-Bold", 16)
-    c.drawString(50, y - 80, "Relatório de Análise de Faturamento de Chips")
+    c.drawString(50, y - 130, "Relatório de Análise de Faturamento de Chips")
     c.setLineWidth(1)
-    c.line(50, y - 85, width - 50, y - 85)
+    c.line(50, y - 135, width - 50, y - 135)
 
     c.setFont("Helvetica", 12)
-    y -= 110
+    y -= 160
     c.drawString(50, y, f"Fornecedor: {fornecedor}")
     y -= 20
     c.drawString(50, y, f"Mês de Referência: {mes_referencia}")
@@ -103,9 +105,13 @@ def gerar_pdf_resumo(merged_df, fornecedor, mes_referencia):
         c.drawString(70, y, f"{status}: {count}")
         y -= 20
 
+    fuso_br = pytz.timezone('America/Sao_Paulo')
+    agora_br = datetime.now(fuso_br)
+    data_hora = agora_br.strftime('%d/%m/%Y %H:%M')
+
     c.setFont("Helvetica-Oblique", 10)
     y -= 30
-    c.drawString(50, y, f"Gerado em: {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+    c.drawString(50, y, f"Gerado em: {data_hora}")
 
     c.save()
     buffer.seek(0)
