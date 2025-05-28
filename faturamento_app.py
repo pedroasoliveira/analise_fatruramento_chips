@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 from io import BytesIO
@@ -59,20 +60,23 @@ def desenhar_tabela(c, y, titulo, contagem, total, total_faturar):
     c.drawString(50, y, titulo)
     y -= 20
     c.setFont("Helvetica-Bold", 10)
-    c.drawString(50, y, "STATUS")
-    c.drawString(200, y, "QUANTIDADE")
+    c.drawString(50, y, "Status ICCID's")
+    c.drawRightString(400, y, "Quantidade")
     y -= 15
     c.setFont("Helvetica", 10)
     for status, quantidade in contagem.items():
         c.drawString(50, y, str(status))
-        c.drawString(200, y, str(quantidade))
+        c.drawRightString(400, y, f"{quantidade:,}".replace(",", "."))
         y -= 15
     c.setFont("Helvetica-Bold", 10)
-    c.drawString(50, y, "TOTAL")
-    c.drawString(200, y, str(total))
+    c.drawString(50, y, "Total de ICCID's")
+    c.drawRightString(400, y, f"{total:,}".replace(",", "."))
     y -= 15
-    c.drawString(50, y, "TOTAL A FATURAR")
-    c.drawString(200, y, f"R$ {total_faturar:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+    c.drawString(50, y, "Valor pacote de dados por ICCID")
+    c.drawRightString(400, y, "R$ 21,51")
+    y -= 15
+    c.drawString(50, y, "Total a Faturar")
+    c.drawRightString(400, y, f"R$ {total_faturar:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
     y -= 30
     return y
 
@@ -103,13 +107,11 @@ def gerar_pdf_resumo(merged_df, fornecedor, mes_referencia):
     c.line(50, y, width - 50, y)
     y -= 20
 
-    # Tabela 1: Base Original
     contagem_original = merged_df['STATUS'].value_counts()
     total_original = contagem_original.sum()
     total_faturar_original = total_original * VALOR_UNITARIO
     y = desenhar_tabela(c, y, "Tabela 1: Situação Original - Base Fornecedor", contagem_original, total_original, total_faturar_original)
 
-    # Tabela 2: Base Revisada
     revisado = merged_df[merged_df['Apto a Faturar'] == 'SIM']
     contagem_revisada = revisado['STATUS'].value_counts()
     total_revisado = contagem_revisada.sum()
