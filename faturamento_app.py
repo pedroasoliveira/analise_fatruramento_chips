@@ -52,15 +52,17 @@ def processar_bases(fornecedor_df, interna_df, lista_aquisicao_df, chips_teste_d
     merged_df['Apto a Faturar'] = merged_df.apply(verifica_faturamento, axis=1)
     return merged_df
 
-def gerar_pdf_resumo(merged_df, logo_path, fornecedor, mes_referencia):
+def gerar_pdf_resumo(merged_df, fornecedor, mes_referencia):
     buffer = BytesIO()
     c = canvas.Canvas(buffer, pagesize=A4)
     width, height = A4
     y = height - 50
 
-    if logo_path:
-        logo = ImageReader(logo_path)
+    try:
+        logo = ImageReader("logo.png")
         c.drawImage(logo, 50, y - 50, width=100, preserveAspectRatio=True)
+    except:
+        pass  # se a logo não for encontrada, continua sem erro
 
     c.setFont("Helvetica-Bold", 16)
     c.drawString(50, y - 80, "Relatório de Análise de Faturamento de Chips")
@@ -118,7 +120,6 @@ fornecedor_file = st.file_uploader("Base do Fornecedor (.xlsx)", type="xlsx")
 interna_file = st.file_uploader("Base Interna (.xlsx)", type="xlsx")
 aquisicao_file = st.file_uploader("Lista de Aquisição (.xlsx)", type="xlsx")
 teste_file = st.file_uploader("Lista de Chips de Teste (.xlsx)", type="xlsx")
-logo_file = st.file_uploader("Logo (.png ou .jpg)", type=["png", "jpg", "jpeg"])
 
 if st.button("Processar"):
     if None in (fornecedor_file, interna_file, aquisicao_file, teste_file):
@@ -130,18 +131,16 @@ if st.button("Processar"):
         chips_teste_df = pd.read_excel(teste_file, sheet_name='CHIP TESTES')
         merged_df = processar_bases(fornecedor_df, interna_df, lista_aquisicao_df, chips_teste_df)
         st.session_state['merged_df'] = merged_df
-        st.session_state['logo_file'] = logo_file
         st.session_state['fornecedor'] = fornecedor
         st.session_state['mes_referencia'] = mes_referencia
         st.success("Processamento concluído com sucesso. Agora você pode baixar os relatórios.")
 
 if 'merged_df' in st.session_state:
     merged_df = st.session_state['merged_df']
-    logo_file = st.session_state.get('logo_file', None)
     fornecedor = st.session_state.get('fornecedor', '')
     mes_referencia = st.session_state.get('mes_referencia', '')
     excel_buffer = BytesIO()
     merged_df.to_excel(excel_buffer, index=False)
     st.download_button("Baixar Relatório Detalhado (Excel)", excel_buffer.getvalue(), "relatorio_faturamento.xlsx")
-    pdf_buffer = gerar_pdf_resumo(merged_df, logo_file, fornecedor, mes_referencia)
+    pdf_buffer = gerar_pdf_resumo(merged_df, fornecedor, mes_referencia)
     st.download_button("Baixar Resumo (PDF)", pdf_buffer.getvalue(), "resumo_faturamento.pdf")
