@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 from io import BytesIO
@@ -51,23 +50,27 @@ def processar_bases(fornecedor_df, interna_df, lista_aquisicao_df, chips_teste_d
     merged_df['Apto a Faturar'] = merged_df.apply(verifica_faturamento, axis=1)
     return merged_df
 
-def gerar_pdf_resumo(merged_df, logo_path):
+def gerar_pdf_resumo(merged_df, logo_path, fornecedor, mes_referencia):
     buffer = BytesIO()
     c = canvas.Canvas(buffer, pagesize=A4)
     width, height = A4
     if logo_path:
         logo = ImageReader(logo_path)
         c.drawImage(logo, 50, height - 100, width=100, preserveAspectRatio=True)
+    c.drawString(50, height - 120, f"Fornecedor: {fornecedor}")
+    c.drawString(50, height - 140, f"Mês de Referência: {mes_referencia}")
+    c.drawString(50, height - 160, "Resumo da Análise de Faturamento")
+
     total_fornecedor = len(merged_df)
     total_aptos = merged_df['Apto a Faturar'].value_counts().get('SIM', 0)
     total_excluidos = total_fornecedor - total_aptos
     excluidos_status = merged_df[merged_df['Apto a Faturar'] == 'NÃO']['STATUS'].value_counts()
-    c.drawString(50, height - 120, "Resumo da Análise de Faturamento")
-    c.drawString(50, height - 140, f"Total de chips recebidos: {total_fornecedor}")
-    c.drawString(50, height - 160, f"Total de chips aptos: {total_aptos}")
-    c.drawString(50, height - 180, f"Total de chips excluídos: {total_excluidos}")
-    c.drawString(50, height - 200, "Status dos chips excluídos:")
-    y = height - 220
+
+    c.drawString(50, height - 180, f"Total de chips recebidos: {total_fornecedor}")
+    c.drawString(50, height - 200, f"Total de chips aptos: {total_aptos}")
+    c.drawString(50, height - 220, f"Total de chips excluídos: {total_excluidos}")
+    c.drawString(50, height - 240, "Status dos chips excluídos:")
+    y = height - 260
     for status, count in excluidos_status.items():
         c.drawString(70, y, f"{status}: {count}")
         y -= 20
@@ -76,6 +79,9 @@ def gerar_pdf_resumo(merged_df, logo_path):
     return buffer
 
 st.title("Analisador de Faturamento de Chips")
+
+fornecedor = st.selectbox("Fornecedor", options=["B2", "DRY", "NUH"])
+mes_referencia = st.text_input("Mês de Referência da Análise")
 
 fornecedor_file = st.file_uploader("Base do Fornecedor (.xlsx)", type="xlsx")
 interna_file = st.file_uploader("Base Interna (.xlsx)", type="xlsx")
@@ -94,13 +100,17 @@ if st.button("Processar"):
         merged_df = processar_bases(fornecedor_df, interna_df, lista_aquisicao_df, chips_teste_df)
         st.session_state['merged_df'] = merged_df
         st.session_state['logo_file'] = logo_file
+        st.session_state['fornecedor'] = fornecedor
+        st.session_state['mes_referencia'] = mes_referencia
         st.success("Processamento concluído com sucesso. Agora você pode baixar os relatórios.")
 
 if 'merged_df' in st.session_state:
     merged_df = st.session_state['merged_df']
     logo_file = st.session_state.get('logo_file', None)
+    fornecedor = st.session_state.get('fornecedor', '')
+    mes_referencia = st.session_state.get('mes_referencia', '')
     excel_buffer = BytesIO()
     merged_df.to_excel(excel_buffer, index=False)
     st.download_button("Baixar Relatório Detalhado (Excel)", excel_buffer.getvalue(), "relatorio_faturamento.xlsx")
-    pdf_buffer = gerar_pdf_resumo(merged_df, logo_file)
+    pdf_buffer = gerar_pdf_resumo(merged_df, logo_file, fornecedor, mes_referencia)
     st.download_button("Baixar Resumo (PDF)", pdf_buffer.getvalue(), "resumo_faturamento.pdf")
