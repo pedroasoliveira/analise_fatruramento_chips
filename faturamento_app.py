@@ -19,20 +19,25 @@ def processar_bases(fornecedor_df, interna_df, lista_aquisicao_df, chips_teste_d
     lista_aquisicao_df['iccid'] = lista_aquisicao_df['iccid'].astype(str).str.strip()
     chips_teste_df['ICCID'] = chips_teste_df['ICCID'].astype(str).str.strip()
     merged_df = pd.merge(fornecedor_df[['ICCID']], interna_df, on='ICCID', how='left')
-    merged_df['CONSTA BASE B2'] = merged_df['STATUS'].apply(lambda x: 'SIM' if pd.notnull(x) else 'NÃO')
+    merged_df['STATUS'] = merged_df['STATUS'].fillna('NÃO CONSTA NA B2')
+    merged_df['CONSTA BASE B2'] = merged_df['STATUS'].apply(lambda x: 'SIM' if x != 'NÃO CONSTA NA B2' else 'NÃO')
     merged_df['LISTA DE AQUISIÇÃO RNP'] = merged_df['ICCID'].isin(lista_aquisicao_df['iccid']).map({True: 'SIM', False: 'NÃO'})
     merged_df['CHIP TESTE'] = merged_df['ICCID'].isin(chips_teste_df['ICCID']).map({True: 'SIM', False: 'NÃO'})
     competencia_fim = pd.to_datetime('2025-04-30')
+
     def verifica_faturamento(row):
         if row['CHIP TESTE'] == 'SIM':
             return 'SIM'
         if row['CONSTA BASE B2'] == 'NÃO':
             if row['LISTA DE AQUISIÇÃO RNP'] == 'NÃO':
                 return 'NÃO'
+            else:
+                return 'NÃO'  # regra atualizada exige também ser chip teste
         status = row['STATUS']
         ativacao = row['DATA DE ATIVAÇÃO']
         cancelamento = row['DATA DE CANCELAMENTO']
         suspensao = row['DATA DE SUSPENSÃO']
+
         if status in ['EXTRAVIADO', 'INATIVO']:
             return 'NÃO'
         if status == 'ATIVO':
@@ -54,6 +59,7 @@ def processar_bases(fornecedor_df, interna_df, lista_aquisicao_df, chips_teste_d
                 return 'SIM'
             return 'NÃO'
         return 'NÃO'
+
     merged_df['Apto a Faturar'] = merged_df.apply(verifica_faturamento, axis=1)
     return merged_df
 
