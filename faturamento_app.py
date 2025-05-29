@@ -25,13 +25,13 @@ def gerar_motivo(row, competencia_fim):
     if status == 'EXTRAVIADO':
         return 'Status inválido - Extraviado'
     if status == 'ATIVO':
-        return 'Ativação fora da competência'
+        return 'Ativação fora do mês competência'
     if status == 'CANCELADO':
-        return 'Cancelamento fora da competência'
+        return 'Cancelamento fora do mês competência'
     if status == 'SUSPENSO':
         return 'Suspensão fora das regras'
     if constabase == 'NÃO' and lista_aquisicao == 'NÃO':
-        return 'Fora da base e fora da lista de aquisição'
+        return 'Fora da base B2 e fora da lista de aquisição RNP'
     return 'Status válido: não identificado'
 
 
@@ -116,7 +116,7 @@ def desenhar_tabela(c, y, titulo, contagem, total, total_faturar):
 
 def desenhar_nao_faturados(c, y, df):
     c.setFont("Helvetica-Bold", 12)
-    c.drawString(50, y, "Tabela 3: Chips Não Aptos a Faturamento")
+    c.drawString(50, y, "Tabela 2.1: Chips Não Aptos a Faturamento")
     y -= 20
     c.setFont("Helvetica-Bold", 10)
     c.drawString(50, y, "Status")
@@ -124,12 +124,23 @@ def desenhar_nao_faturados(c, y, df):
     c.drawRightString(400, y, "Qtde de Chips")
     y -= 15
     c.setFont("Helvetica", 9)
+
     resumo = df[df['Apto a Faturar'] == 'NÃO'].groupby(['STATUS', 'Motivo Não Faturamento']).size().reset_index(name='quantidade')
+    total_nao_apto = 0
+
     for _, row in resumo.iterrows():
         c.drawString(50, y, str(row['STATUS']))
         c.drawString(200, y, str(row['Motivo Não Faturamento'])[:40])
         c.drawRightString(400, y, f"{row['quantidade']:,}".replace(",", "."))
+        total_nao_apto += row['quantidade']
         y -= 15
+
+    # Linha total
+    c.setFont("Helvetica-Bold", 10)
+    c.drawString(50, y, "Total de ICCID's Não Aptos")
+    c.drawRightString(400, y, f"{total_nao_apto:,}".replace(",", "."))
+    y -= 30
+
     return y
 
 def gerar_pdf_resumo(merged_df, fornecedor, mes_referencia):
@@ -169,7 +180,8 @@ def gerar_pdf_resumo(merged_df, fornecedor, mes_referencia):
     total_revisado = contagem_revisada.sum()
     total_faturar_revisado = total_revisado * VALOR_UNITARIO
     y = desenhar_tabela(c, y, "Tabela 2: Situação Revisada - Após Análise", contagem_revisada, total_revisado, total_faturar_revisado)
-
+    
+    nao_apto = merged_df[merged_df['Apto a Faturar'] == 'NÃO']
     y = desenhar_nao_faturados(c, y, merged_df)
     
     fuso_br = pytz.timezone('America/Sao_Paulo')
