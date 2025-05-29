@@ -10,6 +10,41 @@ import pytz
 
 VALOR_UNITARIO = 21.51
 
+st.set_page_config(layout="centered")
+
+st.markdown("""
+### 📜 Objetivo da Aplicação
+
+Esta aplicação tem como objetivo automatizar a análise de faturamento de chips fornecidos por parceiros, com base em regras definidas previamente. O processo consiste em importar as planilhas necessárias, validar os dados conforme critérios estabelecidos, e gerar dois relatórios: um detalhado em Excel e um resumo executivo em PDF.
+
+A aplicação compara a base fornecida com a base interna da RNP, verificando se os chips estão aptos a faturamento conforme os critérios abaixo.
+
+---
+
+### 📌 Regras de Faturamento
+
+| Status                  | Critério de Faturamento                                                                                   |
+|-------------------------|------------------------------------------------------------------------------------------------------------|
+| **ATIVO**               | Faturar se a data de ativação for até o último dia do mês de competência                                   |
+| **CANCELADO**           | Faturar se a data de cancelamento estiver dentro do mês de competência                                     |
+| **EXTRAVIADO**          | **Não faturar**                                                                                            |
+| **INATIVO**             | **Não faturar**                                                                                            |
+| **SUSPENSO**            | Faturar se:<br>
+1️⃣ A data de suspensão estiver dentro do mês de competência<br>
+2️⃣ A suspensão ocorrer dentro do período de fidelidade (até 90 dias após ativação) e esse limite cair no mês de competência<br>
+3️⃣ A suspensão ocorrer **após** o mês de competência |
+| **CHIP TESTE**          | Sempre deve ser faturado                                                                                   |
+| **Fora da Base Interna**| Só fatura se estiver na **lista de aquisição** **e** for **chip teste**                                   |
+
+---
+
+⚠️ Antes de iniciar a análise, preencha os campos obrigatórios (Fornecedor e Mês de Referência) e envie as quatro planilhas solicitadas:  
+- Base do Fornecedor  
+- Base Interna  
+- Lista de Aquisição  
+- Lista de Chips de Teste  
+""", unsafe_allow_html=True)
+
 def processar_bases(fornecedor_df, interna_df, lista_aquisicao_df, chips_teste_df):
     fornecedor_df['ICCID'] = fornecedor_df['Iccid'].astype(str).str.strip()
     interna_df.columns = interna_df.columns.str.strip()
