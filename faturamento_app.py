@@ -1,5 +1,7 @@
 
 import streamlit as st
+st.set_page_config(layout="centered")
+
 import pandas as pd
 from io import BytesIO
 from reportlab.pdfgen import canvas
@@ -130,8 +132,6 @@ def gerar_pdf_resumo(merged_df, fornecedor, mes_referencia):
     return buffer
 
 st.title("Analisador de Faturamento de Chips")
-
-st.set_page_config(layout="centered")
 
 st.markdown("""
 ### 📜 Objetivo da Aplicação
