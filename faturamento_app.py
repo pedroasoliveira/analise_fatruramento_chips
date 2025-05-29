@@ -12,6 +12,29 @@ import pytz
 
 VALOR_UNITARIO = 21.51
 
+def gerar_motivo(row, competencia_fim):
+    status = row['STATUS']
+    ativacao = row['DATA DE ATIVAÇÃO']
+    cancelamento = row['DATA DE CANCELAMENTO']
+    suspensao = row['DATA DE SUSPENSÃO']
+    constabase = row['CONSTA BASE B2']
+    lista_aquisicao = row['LISTA DE AQUISIÇÃO RNP']
+
+    if status == 'INATIVO':
+        return 'Status inválido - Inativo'
+    if status == 'EXTRAVIADO':
+        return 'Status inválido - Extraviado'
+    if status == 'ATIVO':
+        return 'Ativação fora da competência'
+    if status == 'CANCELADO':
+        return 'Cancelamento fora da competência'
+    if status == 'SUSPENSO':
+        return 'Suspensão fora das regras'
+    if constabase == 'NÃO' and lista_aquisicao == 'NÃO':
+        return 'Fora da base e fora da lista de aquisição'
+    return 'Status válido: não identificado'
+
+
 def processar_bases(fornecedor_df, interna_df, lista_aquisicao_df, chips_teste_df):
     fornecedor_df['ICCID'] = fornecedor_df['Iccid'].astype(str).str.strip()
     interna_df.columns = interna_df.columns.str.strip()
@@ -86,6 +109,24 @@ def desenhar_tabela(c, y, titulo, contagem, total, total_faturar):
     c.drawString(50, y, "Total a Faturar")
     c.drawRightString(400, y, f"R$ {total_faturar:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
     y -= 30
+    return y
+
+def desenhar_nao_faturados(c, y, df):
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(50, y, "Tabela 3: Chips Não Aptos a Faturamento")
+    y -= 20
+    c.setFont("Helvetica-Bold", 10)
+    c.drawString(50, y, "Status")
+    c.drawString(200, y, "Motivo")
+    c.drawRightString(400, y, "Qtde de Chips")
+    y -= 15
+    c.setFont("Helvetica", 9)
+    resumo = df[df['Apto a Faturar'] == 'NÃO'].groupby(['STATUS', 'Motivo Não Faturamento']).size().reset_index(name='quantidade')
+    for _, row in resumo.iterrows():
+        c.drawString(50, y, str(row['STATUS']))
+        c.drawString(200, y, str(row['Motivo Não Faturamento'])[:40])
+        c.drawRightString(400, y, f"{row['quantidade']:,}".replace(",", "."))
+        y -= 15
     return y
 
 def gerar_pdf_resumo(merged_df, fornecedor, mes_referencia):
