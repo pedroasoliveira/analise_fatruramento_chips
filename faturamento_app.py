@@ -84,6 +84,9 @@ def processar_bases(fornecedor_df, interna_df, lista_aquisicao_df, chips_teste_d
         return 'NÃO'
 
     merged_df['Apto a Faturar'] = merged_df.apply(verifica_faturamento, axis=1)
+    merged_df['Motivo Não Faturamento'] = merged_df.apply(
+        lambda x: '' if x['Apto a Faturar'] == 'SIM' else gerar_motivo(x, competencia_fim), axis=1)
+
     return merged_df
 
 def desenhar_tabela(c, y, titulo, contagem, total, total_faturar):
@@ -167,10 +170,11 @@ def gerar_pdf_resumo(merged_df, fornecedor, mes_referencia):
     total_faturar_revisado = total_revisado * VALOR_UNITARIO
     y = desenhar_tabela(c, y, "Tabela 2: Situação Revisada - Após Análise", contagem_revisada, total_revisado, total_faturar_revisado)
 
+    y = desenhar_nao_faturados(c, y, merged_df)
+    
     fuso_br = pytz.timezone('America/Sao_Paulo')
     agora_br = datetime.now(fuso_br)
     data_hora = agora_br.strftime('%d/%m/%Y %H:%M')
-
     c.setFont("Helvetica-Oblique", 10)
     c.drawString(50, y, f"Gerado em: {data_hora}")
 
