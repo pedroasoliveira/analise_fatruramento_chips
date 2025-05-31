@@ -256,6 +256,10 @@ if 'merged_df' in st.session_state:
     fornecedor = st.session_state.get('fornecedor', '')
     mes_referencia = st.session_state.get('mes_referencia', '')
     excel_buffer = BytesIO()
+    # Formatar colunas de data para exibir apenas a data (sem hora)
+    for col in ['DATA DE CANCELAMENTO', 'DATA DE SUSPENSÃO', 'DATA DE ATIVAÇÃO']:
+        if col in merged_df.columns:
+            merged_df[col] = pd.to_datetime(merged_df[col], errors='coerce').dt.date
     merged_df.to_excel(excel_buffer, index=False)
     st.download_button("Baixar Relatório Detalhado (Excel)", excel_buffer.getvalue(), "relatorio_faturamento.xlsx")
     pdf_buffer = gerar_pdf_resumo(merged_df, fornecedor, mes_referencia)
