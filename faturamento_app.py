@@ -20,6 +20,8 @@ def gerar_motivo(row, competencia_fim):
     constabase = row['CONSTA BASE B2']
     lista_aquisicao = row['LISTA DE AQUISIÇÃO RNP']
 
+    if status == 'INATIVO' and chip_teste == 'SIM':
+        return ''
     if status == 'INATIVO':
         return 'Status inválido - Inativo'
     if status == 'EXTRAVIADO':
@@ -54,6 +56,10 @@ def processar_bases(fornecedor_df, interna_df, lista_aquisicao_df, chips_teste_d
                 return 'SIM'
             else:
                 return 'NÃO'
+                
+        if status == 'INATIVO' and chip_teste == 'SIM':
+            return 'SIM'
+        
         if row['CONSTA BASE B2'] == 'NÃO':
             if row['LISTA DE AQUISIÇÃO RNP'] == 'NÃO':
                 return 'NÃO'
@@ -89,6 +95,11 @@ def processar_bases(fornecedor_df, interna_df, lista_aquisicao_df, chips_teste_d
     merged_df['Apto a Faturar'] = merged_df.apply(verifica_faturamento, axis=1)
     merged_df['Motivo Não Faturamento'] = merged_df.apply(
         lambda x: '' if x['Apto a Faturar'] == 'SIM' else gerar_motivo(x, competencia_fim), axis=1)
+
+    # Formatar colunas de data no formato DD/MM/AAAA
+    for col in ['DATA DE CANCELAMENTO', 'DATA DE SUSPENSÃO', 'DATA DE ATIVAÇÃO']:
+        if col in merged_df.columns:
+            merged_df[col] = pd.to_datetime(merged_df[col], errors='coerce').dt.strftime('%d/%m/%Y')
 
     return merged_df
 
