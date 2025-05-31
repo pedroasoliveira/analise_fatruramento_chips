@@ -117,13 +117,25 @@ def processar_bases(fornecedor_df, interna_df, lista_aquisicao_df, chips_teste_d
             return 'NÃO'
         return 'NÃO'
 
+    # Converte campos de data para o formato padrão e aplica a regra de faturamento
+    for col in ['DATA DE ATIVAÇÃO', 'DATA DE CANCELAMENTO', 'DATA DE SUSPENSÃO']:
+        merged_df[col] = pd.to_datetime(merged_df[col], errors='coerce').dt.strftime('%d/%m/%Y')
+
+    # Converte de volta para datetime para aplicar cálculos
+    merged_df['DATA DE ATIVAÇÃO'] = pd.to_datetime(merged_df['DATA DE ATIVAÇÃO'], errors='coerce')
+    merged_df['DATA DE CANCELAMENTO'] = pd.to_datetime(merged_df['DATA DE CANCELAMENTO'], errors='coerce')
+    merged_df['DATA DE SUSPENSÃO'] = pd.to_datetime(merged_df['DATA DE SUSPENSÃO'], errors='coerce')
+
     merged_df['Apto a Faturar'] = merged_df.apply(verifica_faturamento, axis=1)
     merged_df['Motivo Não Faturamento'] = merged_df.apply(
         lambda x: '' if x['Apto a Faturar'] == 'SIM' else gerar_motivo(x, competencia_fim), axis=1)
 
-    # Formatação das datas para dd/mm/yyyy
-    for col in ['DATA DE ATIVAÇÃO', 'DATA DE CANCELAMENTO', 'DATA DE SUSPENSÃO']:
-        merged_df[col] = pd.to_datetime(merged_df[col], errors='coerce').dt.strftime('%d/%m/%Y')
+    # Adiciona a coluna de data limite de fidelidade apenas para SUSPENSO
+    limite_fidelidade = merged_df['DATA DE ATIVAÇÃO'] + pd.Timedelta(days=90)
+    merged_df['DATA LIMITE FIDELIDADE (90 DIAS APÓS ATIVAÇÃO)'] = ''
+    merged_df.loc[merged_df['STATUS'] == 'SUSPENSO', 'DATA LIMITE FIDELIDADE (90 DIAS APÓS ATIVAÇÃO)'] = limite_fidelidade[
+        merged_df['STATUS'] == 'SUSPENSO'
+    ].dt.strftime('%d/%m/%Y')
 
     return merged_df
 
