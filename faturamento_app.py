@@ -69,6 +69,7 @@ def processar_bases(fornecedor_df, interna_df, lista_aquisicao_df, chips_teste_d
         ativacao = row['DATA DE ATIVAÇÃO']
         cancelamento = row['DATA DE CANCELAMENTO']
         suspensao = row['DATA DE SUSPENSÃO']
+        chip_teste = row['CHIP TESTE']
 
         if status in ['EXTRAVIADO', 'INATIVO']:
             return 'NÃO'
