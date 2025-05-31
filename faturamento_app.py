@@ -56,8 +56,8 @@ def processar_bases(fornecedor_df, interna_df, lista_aquisicao_df, chips_teste_d
         cancelamento = row['DATA DE CANCELAMENTO']
         suspensao = row['DATA DE SUSPENSÃO']
         chip_teste = row['CHIP TESTE']
-            if chip_teste == 'SIM':
-                return 'SIM'
+        if chip_teste == 'SIM':
+            return 'SIM'
         
         if row['CONSTA BASE B2'] == 'NÃO':
             if row['LISTA DE AQUISIÇÃO RNP'] == 'SIM' and row['CHIP TESTE'] == 'SIM':
