@@ -61,62 +61,54 @@ def processar_bases(fornecedor_df, interna_df, lista_aquisicao_df, chips_teste_d
         chip_teste = row['CHIP TESTE']
         constabase = row['CONSTA BASE B2']
         lista_aquisicao = row['LISTA DE AQUISIÇÃO RNP']
-
+    
+        # Regra específica para CHIP TESTE
         if chip_teste == 'SIM':
             if status == 'EXTRAVIADO':
                 return 'NÃO'
             if status == 'INATIVO':
                 return 'SIM'
             if status == 'ATIVO':
-                if pd.notnull(ativacao) and ativacao <= competencia_fim:
-                    return 'SIM'
-                return 'NÃO'
+                return 'SIM' if pd.notnull(ativacao) and ativacao <= competencia_fim else 'NÃO'
             if status == 'CANCELADO':
-                if pd.notnull(cancelamento) and cancelamento.month == competencia_fim.month and cancelamento.year == competencia_fim.year:
-                    return 'SIM'
-                return 'NÃO'
+                return 'SIM' if pd.notnull(cancelamento) and cancelamento.month == competencia_fim.month and cancelamento.year == competencia_fim.year else 'NÃO'
             if status == 'SUSPENSO':
-                if pd.notnull(suspensao) and suspensao.month == competencia_fim.month and suspensao.year == competencia_fim.year:
-                    return 'SIM'
-                if pd.notnull(suspensao) and pd.notnull(ativacao):
-                    fidelidade_limite = ativacao + pd.Timedelta(days=90)
-                    if suspensao <= fidelidade_limite and competencia_fim >= suspensao:
+                if pd.notnull(suspensao):
+                    if suspensao.month == competencia_fim.month and suspensao.year == competencia_fim.year:
                         return 'SIM'
-                if pd.notnull(suspensao) and suspensao > competencia_fim:
-                    return 'SIM'
+                    if pd.notnull(ativacao):
+                        fidelidade_limite = ativacao + pd.Timedelta(days=90)
+                        if fidelidade_limite.month == competencia_fim.month and fidelidade_limite.year == competencia_fim.year:
+                            return 'SIM'
+                    if suspensao > competencia_fim:
+                        return 'SIM'
                 return 'NÃO'
-            if constabase == 'NÃO' and lista_aquisicao == 'SIM':
-                return 'SIM'
+            if constabase == 'NÃO':
+                return 'SIM' if lista_aquisicao == 'SIM' else 'NÃO'
             return 'NÃO'
-
-        if constabase == 'NÃO':
-            if lista_aquisicao == 'NÃO':
-                return 'NÃO'
-            else:
-                return 'NÃO'  # regra atualizada exige também ser chip teste
-
+    
+        # Demais casos (não teste)
+        if constabase == 'NÃO' and lista_aquisicao == 'NÃO':
+            return 'NÃO'
         if status in ['EXTRAVIADO', 'INATIVO']:
             return 'NÃO'
         if status == 'ATIVO':
-            if pd.notnull(ativacao) and ativacao <= competencia_fim:
-                return 'SIM'
-            return 'NÃO'
+            return 'SIM' if pd.notnull(ativacao) and ativacao <= competencia_fim else 'NÃO'
         if status == 'CANCELADO':
-            if pd.notnull(cancelamento) and cancelamento.month == competencia_fim.month and cancelamento.year == competencia_fim.year:
-                return 'SIM'
-            return 'NÃO'
+            return 'SIM' if pd.notnull(cancelamento) and cancelamento.month == competencia_fim.month and cancelamento.year == competencia_fim.year else 'NÃO'
         if status == 'SUSPENSO':
-            if pd.notnull(suspensao) and suspensao.month == competencia_fim.month and suspensao.year == competencia_fim.year:
-                return 'SIM'
-            if pd.notnull(suspensao) and pd.notnull(ativacao):
-                fidelidade_limite = ativacao + pd.Timedelta(days=90)
-                if suspensao <= fidelidade_limite and fidelidade_limite.month == competencia_fim.month and fidelidade_limite.year == competencia_fim.year:
+            if pd.notnull(suspensao):
+                if suspensao.month == competencia_fim.month and suspensao.year == competencia_fim.year:
                     return 'SIM'
-            if pd.notnull(suspensao) and suspensao > competencia_fim:
-                return 'SIM'
+                if pd.notnull(ativacao):
+                    fidelidade_limite = ativacao + pd.Timedelta(days=90)
+                    if fidelidade_limite.month == competencia_fim.month and fidelidade_limite.year == competencia_fim.year:
+                        return 'SIM'
+                if suspensao > competencia_fim:
+                    return 'SIM'
             return 'NÃO'
         return 'NÃO'
-
+       
     # Converte campos de data para o formato padrão e aplica a regra de faturamento
     for col in ['DATA DE ATIVAÇÃO', 'DATA DE CANCELAMENTO', 'DATA DE SUSPENSÃO']:
         merged_df[col] = pd.to_datetime(merged_df[col], errors='coerce').dt.strftime('%d/%m/%Y')
