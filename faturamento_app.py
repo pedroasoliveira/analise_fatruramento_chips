@@ -62,7 +62,6 @@ def processar_bases(fornecedor_df, interna_df, lista_aquisicao_df, chips_teste_d
         constabase = row['CONSTA BASE B2']
         lista_aquisicao = row['LISTA DE AQUISIÇÃO RNP']
     
-        # Regra específica para CHIP TESTE
         if chip_teste == 'SIM':
             if status == 'EXTRAVIADO':
                 return 'NÃO'
@@ -78,7 +77,7 @@ def processar_bases(fornecedor_df, interna_df, lista_aquisicao_df, chips_teste_d
                         return 'SIM'
                     if pd.notnull(ativacao):
                         fidelidade_limite = ativacao + pd.Timedelta(days=90)
-                        if fidelidade_limite.month == competencia_fim.month and fidelidade_limite.year == competencia_fim.year:
+                        if suspensao <= fidelidade_limite:
                             return 'SIM'
                     if suspensao > competencia_fim:
                         return 'SIM'
@@ -102,13 +101,13 @@ def processar_bases(fornecedor_df, interna_df, lista_aquisicao_df, chips_teste_d
                     return 'SIM'
                 if pd.notnull(ativacao):
                     fidelidade_limite = ativacao + pd.Timedelta(days=90)
-                    if fidelidade_limite.month == competencia_fim.month and fidelidade_limite.year == competencia_fim.year:
+                    if suspensao <= fidelidade_limite:
                         return 'SIM'
                 if suspensao > competencia_fim:
                     return 'SIM'
             return 'NÃO'
         return 'NÃO'
-       
+
     # Converte campos de data para o formato padrão e aplica a regra de faturamento
     for col in ['DATA DE ATIVAÇÃO', 'DATA DE CANCELAMENTO', 'DATA DE SUSPENSÃO']:
         merged_df[col] = pd.to_datetime(merged_df[col], errors='coerce').dt.strftime('%d/%m/%Y')
