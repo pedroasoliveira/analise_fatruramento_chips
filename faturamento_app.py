@@ -19,6 +19,7 @@ def gerar_motivo(row, competencia_fim):
     suspensao = row['DATA DE SUSPENSÃO']
     constabase = row['CONSTA BASE B2']
     lista_aquisicao = row['LISTA DE AQUISIÇÃO RNP']
+    chip_teste = row['CHIP TESTE']
 
     if status == 'INATIVO' and chip_teste == 'SIM':
         return ''
