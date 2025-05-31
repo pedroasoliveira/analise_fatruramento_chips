@@ -80,7 +80,7 @@ def processar_bases(fornecedor_df, interna_df, lista_aquisicao_df, chips_teste_d
                     return 'SIM'
                 if pd.notnull(suspensao) and pd.notnull(ativacao):
                     fidelidade_limite = ativacao + pd.Timedelta(days=90)
-                    if suspensao <= fidelidade_limite and fidelidade_limite.month == competencia_fim.month and fidelidade_limite.year == competencia_fim.year:
+                    if suspensao <= fidelidade_limite and competencia_fim >= suspensao:
                         return 'SIM'
                 if pd.notnull(suspensao) and suspensao > competencia_fim:
                     return 'SIM'
