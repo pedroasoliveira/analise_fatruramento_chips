@@ -293,12 +293,28 @@ if 'merged_df' in st.session_state:
     merged_df = st.session_state['merged_df']
     fornecedor = st.session_state.get('fornecedor', '')
     mes_referencia = st.session_state.get('mes_referencia', '')
+   
+    # ✅ Formatando as datas no formato dd/mm/yyyy
+    colunas_data = ['DATA DE ATIVAÇÃO', 'DATA DE CANCELAMENTO', 'DATA DE SUSPENSÃO']
+    for coluna in colunas_data:
+        if coluna in merged_df.columns:
+            merged_df[coluna] = pd.to_datetime(merged_df[coluna], errors='coerce').dt.strftime('%d/%m/%Y')
+
+        # Formatar colunas de data para exibir apenas a data (sem hora)
+    for col in ['DATA DE CANCELAMENTO', 'DATA DE SUSPENSÃO', 'DATA DE ATIVAÇÃO']:
+        if col in merged_df.columns:
+            merged_df[col] = pd.to_datetime(merged_df[col], errors='coerce').dt.date
+        
+    # ✅ Exportando para Excel   
     excel_buffer = BytesIO()
+    merged_df.to_excel(excel_buffer, index=False)
+    st.download_button("Baixar Relatório Detalhado (Excel)", excel_buffer.getvalue(), "relatorio_faturamento.xlsx")
+
     # Formatar colunas de data para exibir apenas a data (sem hora)
     for col in ['DATA DE CANCELAMENTO', 'DATA DE SUSPENSÃO', 'DATA DE ATIVAÇÃO']:
         if col in merged_df.columns:
             merged_df[col] = pd.to_datetime(merged_df[col], errors='coerce').dt.date
-    merged_df.to_excel(excel_buffer, index=False)
-    st.download_button("Baixar Relatório Detalhado (Excel)", excel_buffer.getvalue(), "relatorio_faturamento.xlsx")
+
+    # ✅ Exportando para PDF
     pdf_buffer = gerar_pdf_resumo(merged_df, fornecedor, mes_referencia)
     st.download_button("Baixar Resumo (PDF)", pdf_buffer.getvalue(), "resumo_faturamento.pdf")
