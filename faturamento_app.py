@@ -49,8 +49,11 @@ def processar_bases(fornecedor_df, interna_df, lista_aquisicao_df, chips_teste_d
     competencia_fim = pd.to_datetime('2025-04-30')
 
     def verifica_faturamento(row):
-        if row['CHIP TESTE'] == 'SIM':
-            return 'SIM'
+        if row['CONSTA BASE B2'] == 'NÃO':
+            if row['LISTA DE AQUISIÇÃO RNP'] == 'SIM' and row['CHIP TESTE'] == 'SIM':
+                return 'SIM'
+            else:
+                return 'NÃO'
         if row['CONSTA BASE B2'] == 'NÃO':
             if row['LISTA DE AQUISIÇÃO RNP'] == 'NÃO':
                 return 'NÃO'
