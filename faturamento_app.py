@@ -1,4 +1,3 @@
-
 import streamlit as st
 st.set_page_config(layout="centered")
 
@@ -21,8 +20,12 @@ def gerar_motivo(row, competencia_fim):
     lista_aquisicao = row['LISTA DE AQUISIÇÃO RNP']
     chip_teste = row['CHIP TESTE']
 
-    if status == 'INATIVO' and chip_teste == 'SIM':
-        return ''
+    if chip_teste == 'SIM':
+        if status == 'EXTRAVIADO':
+            return 'Status inválido - Extraviado'
+        if status == 'INATIVO':
+            return ''
+
     if status == 'INATIVO':
         return 'Status inválido - Inativo'
     if status == 'EXTRAVIADO':
@@ -36,7 +39,6 @@ def gerar_motivo(row, competencia_fim):
     if constabase == 'NÃO' and lista_aquisicao == 'NÃO':
         return 'Fora da base B2 e fora da lista de aquisição RNP'
     return 'Status válido: não identificado'
-
 
 def processar_bases(fornecedor_df, interna_df, lista_aquisicao_df, chips_teste_df):
     fornecedor_df['ICCID'] = fornecedor_df['Iccid'].astype(str).str.strip()
@@ -57,20 +59,38 @@ def processar_bases(fornecedor_df, interna_df, lista_aquisicao_df, chips_teste_d
         cancelamento = row['DATA DE CANCELAMENTO']
         suspensao = row['DATA DE SUSPENSÃO']
         chip_teste = row['CHIP TESTE']
+        constabase = row['CONSTA BASE B2']
+        lista_aquisicao = row['LISTA DE AQUISIÇÃO RNP']
+
         if chip_teste == 'SIM':
-            return 'SIM'
-        
-        if row['CONSTA BASE B2'] == 'NÃO':
-            if row['LISTA DE AQUISIÇÃO RNP'] == 'SIM' and row['CHIP TESTE'] == 'SIM':
-                return 'SIM'
-            else:
+            if status == 'EXTRAVIADO':
                 return 'NÃO'
-                
-        if status == 'INATIVO' and chip_teste == 'SIM':
-            return 'SIM'
-        
-        if row['CONSTA BASE B2'] == 'NÃO':
-            if row['LISTA DE AQUISIÇÃO RNP'] == 'NÃO':
+            if status == 'INATIVO':
+                return 'SIM'
+            if status == 'ATIVO':
+                if pd.notnull(ativacao) and ativacao <= competencia_fim:
+                    return 'SIM'
+                return 'NÃO'
+            if status == 'CANCELADO':
+                if pd.notnull(cancelamento) and cancelamento.month == competencia_fim.month and cancelamento.year == competencia_fim.year:
+                    return 'SIM'
+                return 'NÃO'
+            if status == 'SUSPENSO':
+                if pd.notnull(suspensao) and suspensao.month == competencia_fim.month and suspensao.year == competencia_fim.year:
+                    return 'SIM'
+                if pd.notnull(suspensao) and pd.notnull(ativacao):
+                    fidelidade_limite = ativacao + pd.Timedelta(days=90)
+                    if suspensao <= fidelidade_limite and fidelidade_limite.month == competencia_fim.month and fidelidade_limite.year == competencia_fim.year:
+                        return 'SIM'
+                if pd.notnull(suspensao) and suspensao > competencia_fim:
+                    return 'SIM'
+                return 'NÃO'
+            if constabase == 'NÃO' and lista_aquisicao == 'SIM':
+                return 'SIM'
+            return 'NÃO'
+
+        if constabase == 'NÃO':
+            if lista_aquisicao == 'NÃO':
                 return 'NÃO'
             else:
                 return 'NÃO'  # regra atualizada exige também ser chip teste
@@ -101,10 +121,9 @@ def processar_bases(fornecedor_df, interna_df, lista_aquisicao_df, chips_teste_d
     merged_df['Motivo Não Faturamento'] = merged_df.apply(
         lambda x: '' if x['Apto a Faturar'] == 'SIM' else gerar_motivo(x, competencia_fim), axis=1)
 
-    # Formatar colunas de data no formato DD/MM/AAAA
-    for col in ['DATA DE CANCELAMENTO', 'DATA DE SUSPENSÃO', 'DATA DE ATIVAÇÃO']:
-        if col in merged_df.columns:
-            merged_df[col] = pd.to_datetime(merged_df[col], errors='coerce').dt.strftime('%d/%m/%Y')
+    # Formatação das datas para dd/mm/yyyy
+    for col in ['DATA DE ATIVAÇÃO', 'DATA DE CANCELAMENTO', 'DATA DE SUSPENSÃO']:
+        merged_df[col] = pd.to_datetime(merged_df[col], errors='coerce').dt.strftime('%d/%m/%Y')
 
     return merged_df
 
