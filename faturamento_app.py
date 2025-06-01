@@ -115,7 +115,7 @@ def processar_bases(fornecedor_df, interna_df, lista_aquisicao_df, chips_teste_d
     limite_fidelidade = merged_df['DATA DE ATIVAÇÃO'] + pd.Timedelta(days=90)
     merged_df['DATA LIMITE FIDELIDADE (90 DIAS APÓS ATIVAÇÃO)'] = ''
     merged_df.loc[merged_df['STATUS'] == 'SUSPENSO', 'DATA LIMITE FIDELIDADE (90 DIAS APÓS ATIVAÇÃO)'] = limite_fidelidade[
-        merged_df['STATUS'] == 'SUSPENSO']
+        merged_df['STATUS'] == 'SUSPENSO'].dt.date
 
     return merged_df
 
