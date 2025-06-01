@@ -53,7 +53,7 @@ def processar_bases(fornecedor_df, interna_df, lista_aquisicao_df, chips_teste_d
     merged_df['CHIP TESTE'] = merged_df['ICCID'].isin(chips_teste_df['ICCID']).map({True: 'SIM', False: 'NÃO'})
     competencia_fim = pd.to_datetime('2025-04-30')
 
-    def verifica_faturamento(row):
+        def verifica_faturamento(row):
         status = row['STATUS']
         ativacao = row['DATA DE ATIVAÇÃO']
         cancelamento = row['DATA DE CANCELAMENTO']
@@ -61,7 +61,7 @@ def processar_bases(fornecedor_df, interna_df, lista_aquisicao_df, chips_teste_d
         chip_teste = row['CHIP TESTE']
         constabase = row['CONSTA BASE B2']
         lista_aquisicao = row['LISTA DE AQUISIÇÃO RNP']
-    
+
         if chip_teste == 'SIM':
             if status == 'EXTRAVIADO':
                 return 'NÃO'
@@ -72,21 +72,17 @@ def processar_bases(fornecedor_df, interna_df, lista_aquisicao_df, chips_teste_d
             if status == 'CANCELADO':
                 return 'SIM' if pd.notnull(cancelamento) and cancelamento.month == competencia_fim.month and cancelamento.year == competencia_fim.year else 'NÃO'
             if status == 'SUSPENSO':
-                if pd.notnull(suspensao):
+                if pd.notnull(suspensao) and pd.notnull(ativacao):
+                    fidelidade_limite = ativacao + pd.Timedelta(days=90)
                     if suspensao.month == competencia_fim.month and suspensao.year == competencia_fim.year:
                         return 'SIM'
-                    if pd.notnull(ativacao):
-                        fidelidade_limite = ativacao + pd.Timedelta(days=90)
-                        if suspensao <= fidelidade_limite and fidelidade_limite >= competencia_fim:
-                            return 'SIM'
-                    if suspensao > competencia_fim:
+                    if suspensao <= fidelidade_limite and fidelidade_limite >= competencia_fim:
                         return 'SIM'
                 return 'NÃO'
             if constabase == 'NÃO':
                 return 'SIM' if lista_aquisicao == 'SIM' else 'NÃO'
             return 'NÃO'
-    
-        # Demais casos (não teste)
+
         if constabase == 'NÃO' and lista_aquisicao == 'NÃO':
             return 'NÃO'
         if status in ['EXTRAVIADO', 'INATIVO']:
@@ -96,22 +92,18 @@ def processar_bases(fornecedor_df, interna_df, lista_aquisicao_df, chips_teste_d
         if status == 'CANCELADO':
             return 'SIM' if pd.notnull(cancelamento) and cancelamento.month == competencia_fim.month and cancelamento.year == competencia_fim.year else 'NÃO'
         if status == 'SUSPENSO':
-            if pd.notnull(suspensao):
+            if pd.notnull(suspensao) and pd.notnull(ativacao):
+                fidelidade_limite = ativacao + pd.Timedelta(days=90)
                 if suspensao.month == competencia_fim.month and suspensao.year == competencia_fim.year:
                     return 'SIM'
-                if pd.notnull(ativacao):
-                    fidelidade_limite = ativacao + pd.Timedelta(days=90)
-                    if suspensao <= fidelidade_limite and fidelidade_limite >= competencia_fim:
-                        return 'SIM'
-                if suspensao > competencia_fim:
+                if suspensao <= fidelidade_limite and fidelidade_limite >= competencia_fim:
                     return 'SIM'
             return 'NÃO'
         return 'NÃO'
-    # Converte campos de data para o formato padrão e aplica a regra de faturamento
+
     for col in ['DATA DE ATIVAÇÃO', 'DATA DE CANCELAMENTO', 'DATA DE SUSPENSÃO']:
         merged_df[col] = pd.to_datetime(merged_df[col], errors='coerce').dt.strftime('%d/%m/%Y')
 
-    # Converte de volta para datetime para aplicar cálculos
     merged_df['DATA DE ATIVAÇÃO'] = pd.to_datetime(merged_df['DATA DE ATIVAÇÃO'], errors='coerce')
     merged_df['DATA DE CANCELAMENTO'] = pd.to_datetime(merged_df['DATA DE CANCELAMENTO'], errors='coerce')
     merged_df['DATA DE SUSPENSÃO'] = pd.to_datetime(merged_df['DATA DE SUSPENSÃO'], errors='coerce')
@@ -120,12 +112,10 @@ def processar_bases(fornecedor_df, interna_df, lista_aquisicao_df, chips_teste_d
     merged_df['Motivo Não Faturamento'] = merged_df.apply(
         lambda x: '' if x['Apto a Faturar'] == 'SIM' else gerar_motivo(x, competencia_fim), axis=1)
 
-    # Adiciona a coluna de data limite de fidelidade apenas para SUSPENSO
     limite_fidelidade = merged_df['DATA DE ATIVAÇÃO'] + pd.Timedelta(days=90)
     merged_df['DATA LIMITE FIDELIDADE (90 DIAS APÓS ATIVAÇÃO)'] = ''
     merged_df.loc[merged_df['STATUS'] == 'SUSPENSO', 'DATA LIMITE FIDELIDADE (90 DIAS APÓS ATIVAÇÃO)'] = limite_fidelidade[
-        merged_df['STATUS'] == 'SUSPENSO'
-    ].dt.strftime('%d/%m/%Y')
+        merged_df['STATUS'] == 'SUSPENSO']
 
     return merged_df
 
