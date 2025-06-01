@@ -116,6 +116,13 @@ def processar_bases(fornecedor_df, interna_df, lista_aquisicao_df, chips_teste_d
     merged_df['DATA LIMITE FIDELIDADE (90 DIAS APÓS ATIVAÇÃO)'] = ''
     merged_df.loc[merged_df['STATUS'] == 'SUSPENSO', 'DATA LIMITE FIDELIDADE (90 DIAS APÓS ATIVAÇÃO)'] = limite_fidelidade[
         merged_df['STATUS'] == 'SUSPENSO'].dt.date
+    
+    # Reorganiza as colunas para posicionar a coluna de fidelidade após 'DATA DE SUSPENSÃO'
+    cols = list(merged_df.columns)
+    if 'DATA DE SUSPENSÃO' in cols and 'DATA LIMITE FIDELIDADE (90 DIAS APÓS ATIVAÇÃO)' in cols:
+        idx = cols.index('DATA DE SUSPENSÃO') + 1
+        cols.insert(idx, cols.pop(cols.index('DATA LIMITE FIDELIDADE (90 DIAS APÓS ATIVAÇÃO)')))
+        merged_df = merged_df[cols]
 
     return merged_df
 
