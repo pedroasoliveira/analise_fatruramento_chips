@@ -52,8 +52,8 @@ def processar_bases(fornecedor_df, interna_df, lista_aquisicao_df, chips_teste_d
     merged_df['LISTA DE AQUISIÇÃO RNP'] = merged_df['ICCID'].isin(lista_aquisicao_df['iccid']).map({True: 'SIM', False: 'NÃO'})
     merged_df['CHIP TESTE'] = merged_df['ICCID'].isin(chips_teste_df['ICCID']).map({True: 'SIM', False: 'NÃO'})
     competencia_fim = pd.to_datetime('2025-04-30')
-
-        def verifica_faturamento(row):
+    
+    def verifica_faturamento(row):
         status = row['STATUS']
         ativacao = row['DATA DE ATIVAÇÃO']
         cancelamento = row['DATA DE CANCELAMENTO']
