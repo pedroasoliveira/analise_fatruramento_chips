@@ -40,18 +40,22 @@ def gerar_motivo(row, competencia_fim):
         return 'Fora da base B2 e fora da lista de aquisição RNP'
     return 'Status válido: não identificado'
 
-try:
-    competencia_fim = pd.to_datetime(f'{mes_referencia}-01') + pd.offsets.MonthEnd(0)
-except:
-    st.error("Formato inválido para o Mês de Referência. Use o formato YYYY-MM, exemplo: 2025-05")
-    st.stop()
-
-def processar_bases(fornecedor_df, interna_df, lista_aquisicao_df, chips_teste_df, competencia_fim):
+def processar_bases(fornecedor_df, interna_df, lista_aquisicao_df, chips_teste_df, mes_referencia):
+    if not mes_referencia:
+        st.error("Mês de Referência não informado. Use o formato YYYY-MM, exemplo: 2025-05.")
+        return pd.DataFrame()
+    try:
+        competencia_fim = pd.to_datetime(mes_referencia + '-01') + pd.offsets.MonthEnd(0)
+    except Exception:
+        st.error("Formato inválido para o Mês de Referência. Use o formato YYYY-MM, exemplo: 2025-05.")
+        return pd.DataFrame()
+        
     fornecedor_df['ICCID'] = fornecedor_df['Iccid'].astype(str).str.strip()
     interna_df.columns = interna_df.columns.str.strip()
     interna_df['ICCID'] = interna_df['ICCID'].astype(str).str.strip()
     lista_aquisicao_df['iccid'] = lista_aquisicao_df['iccid'].astype(str).str.strip()
     chips_teste_df['ICCID'] = chips_teste_df['ICCID'].astype(str).str.strip()
+    
     merged_df = pd.merge(fornecedor_df[['ICCID']], interna_df, on='ICCID', how='left')
     merged_df['STATUS'] = merged_df['STATUS'].fillna('NÃO CONSTA NA B2')
     merged_df['CONSTA BASE B2'] = merged_df['STATUS'].apply(lambda x: 'SIM' if x != 'NÃO CONSTA NA B2' else 'NÃO')
