@@ -40,7 +40,13 @@ def gerar_motivo(row, competencia_fim):
         return 'Fora da base B2 e fora da lista de aquisição RNP'
     return 'Status válido: não identificado'
 
-def processar_bases(fornecedor_df, interna_df, lista_aquisicao_df, chips_teste_df):
+try:
+    competencia_fim = pd.to_datetime(f'{mes_referencia}-01') + pd.offsets.MonthEnd(0)
+except:
+    st.error("Formato inválido para o Mês de Referência. Use o formato YYYY-MM, exemplo: 2025-05")
+    st.stop()
+
+def processar_bases(fornecedor_df, interna_df, lista_aquisicao_df, chips_teste_df, competencia_fim):
     fornecedor_df['ICCID'] = fornecedor_df['Iccid'].astype(str).str.strip()
     interna_df.columns = interna_df.columns.str.strip()
     interna_df['ICCID'] = interna_df['ICCID'].astype(str).str.strip()
@@ -51,7 +57,6 @@ def processar_bases(fornecedor_df, interna_df, lista_aquisicao_df, chips_teste_d
     merged_df['CONSTA BASE B2'] = merged_df['STATUS'].apply(lambda x: 'SIM' if x != 'NÃO CONSTA NA B2' else 'NÃO')
     merged_df['LISTA DE AQUISIÇÃO RNP'] = merged_df['ICCID'].isin(lista_aquisicao_df['iccid']).map({True: 'SIM', False: 'NÃO'})
     merged_df['CHIP TESTE'] = merged_df['ICCID'].isin(chips_teste_df['ICCID']).map({True: 'SIM', False: 'NÃO'})
-    competencia_fim = pd.to_datetime('2025-04-30')
     
     def verifica_faturamento(row):
         status = row['STATUS']
@@ -266,7 +271,7 @@ A aplicação compara a base fornecida com a base interna da RNP, verificando se
 - Lista de Chips de Teste  
 """, unsafe_allow_html=True)
 
-fornecedor = st.selectbox("Fornecedor", options=["B2", "DRY", "NUH"])
+fornecedor = st.selectbox("Fornecedor", options=["A", "B", "C"])
 mes_referencia = st.text_input("Mês de Referência da Análise")
 
 fornecedor_file = st.file_uploader("Base do Fornecedor (.xlsx)", type="xlsx")
@@ -282,7 +287,7 @@ if st.button("Processar"):
         interna_df = pd.read_excel(interna_file, header=1)
         lista_aquisicao_df = pd.read_excel(aquisicao_file)
         chips_teste_df = pd.read_excel(teste_file, sheet_name='CHIP TESTES')
-        merged_df = processar_bases(fornecedor_df, interna_df, lista_aquisicao_df, chips_teste_df)
+        merged_df = processar_bases(fornecedor_df, interna_df, lista_aquisicao_df, chips_teste_df, competencia_fim)
         st.session_state['merged_df'] = merged_df
         st.session_state['fornecedor'] = fornecedor
         st.session_state['mes_referencia'] = mes_referencia
