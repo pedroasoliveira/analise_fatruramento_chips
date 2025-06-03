@@ -291,7 +291,7 @@ if st.button("Processar"):
         interna_df = pd.read_excel(interna_file, header=1)
         lista_aquisicao_df = pd.read_excel(aquisicao_file)
         chips_teste_df = pd.read_excel(teste_file, sheet_name='CHIP TESTES')
-        merged_df = processar_bases(fornecedor_df, interna_df, lista_aquisicao_df, chips_teste_df, competencia_fim)
+        merged_df = processar_bases(fornecedor_df, interna_df, lista_aquisicao_df, chips_teste_df, mes_referencia)
         st.session_state['merged_df'] = merged_df
         st.session_state['fornecedor'] = fornecedor
         st.session_state['mes_referencia'] = mes_referencia
