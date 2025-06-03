@@ -14,7 +14,7 @@ Aplicação web desenvolvida em **Streamlit** para realizar a análise automatiz
   ✅ Logo institucional (opcional)
 
 - Preenchimento prévio de:  
-  ✅ **Fornecedor** → lista suspensa: B2, DRY, NUH  
+  ✅ **Fornecedor** → lista suspensa: A, B e C 
   ✅ **Mês de Referência da Análise** → campo de texto
 
 - Processamento com aplicação automática de regras de faturamento.  
