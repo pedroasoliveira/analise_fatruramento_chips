@@ -50,9 +50,9 @@ def processar_bases(fornecedor_df, interna_df, lista_aquisicao_df, chips_teste_d
         st.error("Formato inválido para o Mês de Referência. Use o formato YYYY-MM, exemplo: 2025-05.")
         return pd.DataFrame()
         
-    fornecedor_df['ICCID'] = fornecedor_df['Iccid'].astype(str).str.strip()
+    fornecedor_df['ICCID'] = fornecedor_df['Iccid'].astype(str).str.strip().str.zfill(19)
     interna_df.columns = interna_df.columns.str.strip()
-    interna_df['ICCID'] = interna_df['ICCID'].astype(str).str.strip()
+    interna_df['ICCID'] = interna_df['ICCID'].astype(str).str.strip().str.zfill(19)
     lista_aquisicao_df['iccid'] = lista_aquisicao_df['iccid'].astype(str).str.strip()
     chips_teste_df['ICCID'] = chips_teste_df['ICCID'].astype(str).str.strip()
     
